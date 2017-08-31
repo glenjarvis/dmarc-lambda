@@ -1,5 +1,5 @@
 # dmarc.lambda
-AWS Lambda Application that receives, parses and processes DMARC summary reports
+AWS Lambda Application that receives, parses and processes DMARC summary reports.
 
 Spam email has been a problem since the mid-nineties. There have been technological advances that let the owner of a domain (e.g., `google.com` or `scs.lbl.gov` or `glenjarvis.com`) absolutely control if an email from that domain really belongs to them:
 
@@ -16,12 +16,12 @@ This OpenSource project is a framework that collects those reports, parses them,
 
 The specific technology used in this project uses `Amazon Web Services` (AWS) heavily in a serverless stack. These are the services that are used:
 
-1. Reports are sent from email agents (`google.com`, `yahoo.com`, `aol.com`, etc.) via email. The AWS service that receives email is `Simple Email Service` (`SES`)
+1. Reports are sent from email agents (`google.com`, `yahoo.com`, `aol.com`, etc.) via email. The AWS service that receives email is `Simple Email Service` (`SES`).
 1. Contents of these emails are stored in an AWS service called `Simple Storage Service` (`S3`).
 1. Code is needed to parse that email and extract the attached file. This code runs serverless in an AWS `Lambda` service. Once the attachment is parsed from the email (that is still stored in `S3`), the attachment will be also be stored in *another* `S3` location. Lambda log output will be stored in the AWS CloudWatch service.
 1. Code is needed to parse the previously attached `DMARC` compressed reports (`xml` compressed as either `zip` or `gz`). This will also run as a serverless `Lambda`.
 1. Finally, the parsed data needs stored. The simplest place to store this data is in the AWS service called `DynamoDB`. One can convert that data to a Relational Database format of their choice.
-1. Meaningful reports from the previously collected data can then be generated
+1. Meaningful reports from the previously collected data can then be generated.
 
 # Easy to Contribute to this OpenSource Project
 
@@ -59,7 +59,7 @@ Copyright 2017 Glen Jarvis, LLC
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 this repository except in compliance with the License.  You may obtain a copy of the
-License at
+License at:
 
 https://github.com/glenjarvis/dmarc.lambda/blob/master/LICENSE
 
