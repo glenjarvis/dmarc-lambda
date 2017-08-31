@@ -38,5 +38,5 @@ def details_from_filename(dmarc_filename:str):
 ```
 
 
-Place keep all files in this directory (dmarc.lambda/task3_parse_filenames)
+Please keep all files in this directory (dmarc.lambda/task3_parse_filenames)
 including any *awesome* pyunit tests you may want to include.
