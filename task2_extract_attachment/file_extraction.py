@@ -45,15 +45,15 @@ def extract_files(source_filepath, target_directory):
         tee_consumer1,
         target_directory
     )
-    file_archive_preconsumer = FileArchivePatchConsumer(
+    file_archive_patch_consumer = FileArchivePatchConsumer(
         file_archive_consumer
     )
-    file_content_consumer = FileAttachmentContentConsumer(
-        file_archive_preconsumer,
+    file_attchmnt_content_consumer = FileAttachmentContentConsumer(
+        file_archive_patch_consumer,
         target_directory
     )
     tee_consumer2 = TeeConsumer(
-        file_content_consumer
+        file_attchmnt_content_consumer
     )
     workflow = MailFileConsumer(
         tee_consumer2
