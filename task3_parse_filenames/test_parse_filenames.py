@@ -9,8 +9,6 @@ class MyTest(unittest.TestCase):
         self.assertEqual(parse_filenames.details_from_filename(
                         'google.com!glenjarvis.com!1501372800!1501459199.zip'),
                         ['google.com', 'glenjarvis.com',
-                            datetime.datetime(2017, 7, 30, 0, 0, 0,
-                                              tzinfo=datetime.timezone.utc),
-                            datetime.datetime(2017, 7, 30, 23, 59, 59,
-                                              tzinfo=datetime.timezone.utc)]
+                            datetime.datetime(2017, 7, 29, 17, 0, 0),
+                            datetime.datetime(2017, 7, 30, 16, 59, 59)]
         )
