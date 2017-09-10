@@ -45,11 +45,11 @@ def extract_files(source_filepath, target_directory):
         tee_consumer1,
         target_directory
     )
-    file_archive_patch_consumer = FileArchivePatchConsumer(
+    zip_archive_patch_consumer = ZipArchivePatchConsumer(
         zip_archive_unzip_consumer
     )
     file_writer_consumer = FileWriterConsumer(
-        file_archive_patch_consumer,
+        zip_archive_patch_consumer,
         target_directory
     )
     tee_consumer2 = TeeConsumer(
@@ -218,7 +218,7 @@ class FileWriterConsumer:
         return self._consumer(file_path)
 
 
-class FileArchivePatchConsumer:
+class ZipArchivePatchConsumer:
 
     """given an absolute path to an archive file, this
     command patches the archive in order to overcome a
