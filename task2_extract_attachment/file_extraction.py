@@ -197,7 +197,7 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
 
 class FileWriterConsumer:
 
-    """given a set of file-attributes, this command creates
+    """given a file-attributes object, this command creates
     and populates a file."""
 
     def __init__(self, consumer, directory_path):
