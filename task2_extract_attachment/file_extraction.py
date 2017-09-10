@@ -41,12 +41,12 @@ def extract_files(source_filepath, target_directory):
     tee_consumer1 = TeeConsumer(
         file_consumer
     )
-    file_archive_consumer = FileArchiveConsumer(
+    zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
         tee_consumer1,
         target_directory
     )
     file_archive_patch_consumer = FileArchivePatchConsumer(
-        file_archive_consumer
+        zip_archive_unzip_consumer
     )
     file_writer_consumer = FileWriterConsumer(
         file_archive_patch_consumer,
@@ -247,7 +247,7 @@ class FileArchivePatchConsumer:
         self._consumer(archive_path)
 
 
-class FileArchiveConsumer:
+class ZipArchiveExtractionConsumer:
 
     """given an archive file, this command unarchives
     the file and creates a file for each piece of content
