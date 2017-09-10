@@ -48,12 +48,12 @@ def extract_files(source_filepath, target_directory):
     file_archive_patch_consumer = FileArchivePatchConsumer(
         file_archive_consumer
     )
-    file_attchmnt_content_consumer = FileAttachmentContentConsumer(
+    file_writer_consumer = FileWriterConsumer(
         file_archive_patch_consumer,
         target_directory
     )
     tee_consumer2 = TeeConsumer(
-        file_attchmnt_content_consumer
+        file_writer_consumer
     )
     workflow = MailFileConsumer(
         tee_consumer2
@@ -195,7 +195,7 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
                 return self._consumer(result)
 
 
-class FileAttachmentContentConsumer:
+class FileWriterConsumer:
 
     """given a set of file-attributes, this command creates
     and populates a file."""
