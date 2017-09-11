@@ -130,3 +130,17 @@ class UnitTests(unittest.TestCase):
             PathOfControlFailure(self)
         )
         system_under_test(3)
+
+
+class IntegrationTests(unittest.TestCase):
+
+    def test_gzip_archive_extraction_consumer(self):
+        system_under_test = GzipArchiveExtractionConsumer(
+            EqualAssertion(
+                self,
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+            ),
+            './dist'
+        )
+
+        system_under_test('./google.com!glenjarvis.com!1501372800!1501459199.xml.gz')
