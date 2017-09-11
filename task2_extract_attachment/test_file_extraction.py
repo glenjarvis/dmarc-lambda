@@ -1,4 +1,6 @@
 import unittest
+import os
+import filecmp
 
 from file_extraction import *
 
@@ -134,6 +136,28 @@ class UnitTests(unittest.TestCase):
 
 class IntegrationTests(unittest.TestCase):
 
+    def clean_up(self):
+        try:
+            os.remove('./dist/google.com!glenjarvis.com!1501372800!1501459199.xml')
+        except FileNotFoundError:
+            pass
+
+        try:
+            os.remove('./dist/google.com!glenjarvis.com!1501372800!1501459199.xml.gz')
+        except FileNotFoundError:
+            pass
+
+        try:
+            os.remove('./dist/google.com!glenjarvis.com!1501372800!1501459199.zip')
+        except FileNotFoundError:
+            pass
+
+    def setUp(self):
+        self.clean_up()
+
+    def tearDown(self):
+        self.clean_up()
+
     def test_gzip_archive_extraction_consumer(self):
         system_under_test = GzipArchiveExtractionConsumer(
             EqualAssertion(
@@ -143,4 +167,51 @@ class IntegrationTests(unittest.TestCase):
             './dist'
         )
 
+        self.assertFalse(
+            os.path.isfile(
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+            )
+        )
+
         system_under_test('./google.com!glenjarvis.com!1501372800!1501459199.xml.gz')
+
+        self.assertTrue(
+            os.path.isfile(
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+            )
+        )
+
+        self.assertTrue(
+            filecmp.cmp(
+                './google.com!glenjarvis.com!1501372800!1501459199.xml',
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml',
+                shallow=False
+            )
+        )
+
+    def test_api(self):
+
+        self.assertFalse(
+            os.path.isfile(
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+            )
+        )
+
+        extract_files(
+            './tcq88aasf2uj5r4dknkpmp641bloic79f8399ag1',
+            './dist'
+        )
+
+        self.assertTrue(
+            os.path.isfile(
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+            )
+        )
+
+        self.assertTrue(
+            filecmp.cmp(
+                './google.com!glenjarvis.com!1501372800!1501459199.xml',
+                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml',
+                shallow=False
+            )
+        )
