@@ -42,7 +42,7 @@ def extract_files(source_filepath, target_directory):
     file_consumer = FileConsumer(
         file_content_consumer
     )
-    tee_consumer1 = TeeConsumer(
+    mapping_consumer1 = MappingConsumer(
         file_consumer
     )
 
@@ -51,7 +51,7 @@ def extract_files(source_filepath, target_directory):
     # end of content-based-router
 
     zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
-        tee_consumer1,
+        mapping_consumer1,
         target_directory
     )
     zip_archive_patch_consumer = ZipArchivePatchConsumer(
@@ -61,11 +61,11 @@ def extract_files(source_filepath, target_directory):
         zip_archive_patch_consumer,
         target_directory
     )
-    tee_consumer2 = TeeConsumer(
+    mapping_consumer2 = MappingConsumer(
         file_writer_consumer
     )
     workflow = MailFileConsumer(
-        tee_consumer2
+        mapping_consumer2
     )
 
     # initiate consumption
@@ -133,7 +133,7 @@ def examine_consumer_input(func):
 
 
 # generic consumers
-class TeeConsumer:
+class MappingConsumer:
 
     """given a collection of things, this command iterates
     over the collection and ships each item downstream. this
