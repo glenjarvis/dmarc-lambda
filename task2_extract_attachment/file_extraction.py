@@ -183,7 +183,7 @@ class PathSelectionConsumer:
             else:
                 pass
 
-        policy(value)
+        self._policy(value)
 
 
 # specialized consumers
