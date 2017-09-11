@@ -203,9 +203,9 @@ class PathSelectionConsumer:
     ContentBasedRouter.html
     """
 
-    def __init__(self, selection_attributes, policy):
+    def __init__(self, selection_attributes, policy_function):
         self._selection_attributes = selection_attributes
-        self._policy = policy
+        self._policy_function = policy_function
 
     @examine_consumer_input
     def __call__(self, value):
@@ -217,7 +217,7 @@ class PathSelectionConsumer:
             else:
                 pass
 
-        self._policy(value)
+        self._policy_function(value)
 
 
 # specialized consumers
@@ -249,7 +249,10 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
                     content_disposition = part.get('Content-Disposition')
                     content = part.get_payload(decode=True)
 
-                    if self._content_criteria(content_type, content_disposition):
+                    if self._content_criteria(
+                            content_type,
+                            content_disposition
+                    ):
                         try:
                             file_name = extract_filename(content_disposition)
 
@@ -348,18 +351,19 @@ class ZipArchiveExtractionConsumer:
         return self._consumer(result)
 
 
+# pylint: disable=broad-except
 class GzipArchiveExtractionConsumer:
 
     """given a gzip archive file, this command unarchives
     the file and creates a file for the single piece of
     content found within.
-    
+
     'Although its file format also allows for multiple
     such streams to be concatenated (zipped files are
     simply decompressed concatenated as if they were
     originally one file[3]), gzip is normally used to
     compress just single files.'
-    
+
     see also:
     https://en.wikipedia.org/wiki/Gzip
     """
@@ -388,7 +392,7 @@ class GzipArchiveExtractionConsumer:
                 # test if it is xml
                 document = xml.fromstring(content.decode('utf-8'))
                 report_metadata = document.find('report_metadata')
-                email_provider = report_metadata.find('org_name').text.strip()
+                report_metadata.find('org_name').text.strip()
 
                 with open(file_path, 'wb') as file_pointer:
                     file_pointer.write(content)
