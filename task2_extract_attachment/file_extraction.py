@@ -285,7 +285,7 @@ class ZipArchivePatchConsumer:
             else:
                 pass
 
-        self._consumer(archive_path)
+        return self._consumer(archive_path)
 
 
 class ZipArchiveExtractionConsumer:
@@ -312,9 +312,9 @@ class ZipArchiveExtractionConsumer:
 
                     result.append(file_path)
 
-        self._consumer(result)
-
         # os.remove(archive_path)
+
+        return self._consumer(result)
 
 
 class FileConsumer:
@@ -330,6 +330,6 @@ class FileConsumer:
         with open(file_path, encoding='utf-8') as file_pointer:
             content = file_pointer.read()
 
-        self._consumer(content)
-
         # os.remove(file_path)
+
+        return self._consumer(content)
