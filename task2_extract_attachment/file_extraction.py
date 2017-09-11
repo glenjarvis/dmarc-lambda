@@ -65,7 +65,8 @@ def extract_files(source_filepath, target_directory):
         file_writer_consumer
     )
     workflow = MailFileConsumer(
-        mapping_consumer2
+        mapping_consumer2,
+        archive_selection_criteria
     )
 
     # initiate consumption
@@ -110,6 +111,17 @@ def valid_directory_or_die(directory_path):
         raise NotADirectoryError(directory_path)
     else:
         return directory_path
+
+
+def archive_selection_criteria(content_type, content_disposition):
+
+    """NOT part of the API; simply external to its client.
+    determine whether the payload within the email is worthy."""
+
+    return ((content_type == 'application/zip' or
+             content_type == 'application/gzip') and
+            content_disposition is not None and
+            content_disposition.startswith('attachment;'))
 
 
 def examine_consumer_input(func):
@@ -195,8 +207,9 @@ class MailFileConsumer:
     https://stackoverflow.com/questions/17874360/
 python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
 
-    def __init__(self, consumer):
+    def __init__(self, consumer, content_criteria):
         self._consumer = consumer
+        self._content_criteria = content_criteria
 
     @examine_consumer_input
     def __call__(self, file_name):
@@ -214,9 +227,7 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
                     content_disposition = part.get('Content-Disposition')
                     content = part.get_payload(decode=True)
 
-                    if (content_type == 'application/zip' and
-                            content_disposition is not None and
-                            content_disposition.startswith('attachment;')):
+                    if self._content_criteria(content_type, content_disposition):
                         try:
                             file_name = extract_filename(content_disposition)
 
