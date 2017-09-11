@@ -30,22 +30,19 @@ def extract_files(source_filepath, target_directory):
        source_filepath is the full path to the input file
        target_directory is the full path of the directory to be used for
          processing
-       return value is a collection of utf-8 strings, each of which contains
-         the contents of an extracted and unarchived file"""
+       return value is a collection of zero or more paths, each of which is the
+         absolute path of an extracted and unarchived xml file"""
 
     result = []
 
-    def file_content_consumer(file_content):
+    def file_path_consumer(file_path):
 
-        """trivial consumer for file_content collection"""
+        """trivial consumer for file_path collection"""
 
-        result.append(file_content)
+        result.append(file_path)
 
-    file_consumer = FileConsumer(
-        file_content_consumer
-    )
     mapping_consumer1 = MappingConsumer(
-        file_consumer
+        file_path_consumer
     )
     zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
         mapping_consumer1,
@@ -54,27 +51,28 @@ def extract_files(source_filepath, target_directory):
     zip_archive_patch_consumer = ZipArchivePatchConsumer(
         zip_archive_unzip_consumer
     )
+    gzip_archive_unzip_consumer = GzipArchiveExtractionConsumer(
+        file_path_consumer,
+        target_directory
+    )
 
-    # we need to introduce a content-based-router
-    # temporary
-    class ExplodingConsumer:
-
-        def __call__(self, value):
-            raise SystemError
-
+    # content-based-router:
+    # do i zip or use gzip?
+    # do i zip or use gzip?
+    # if gzip, there may be trouble.
+    # if i zip, the size is double.
     attributes_1 = ConsumerSelectionAttributes(
         predicate=lambda archive_path: archive_path.endswith('.zip'),
         consumer=zip_archive_patch_consumer
     )
     attributes_2 = ConsumerSelectionAttributes(
         predicate=lambda archive_path: archive_path.endswith('.gz'),
-        consumer=ExplodingConsumer()
+        consumer=gzip_archive_unzip_consumer
     )
     archive_selection_consumer = PathSelectionConsumer(
         [attributes_1, attributes_2],
         lambda ignored: True
     )
-    # end of content-based-router
 
     file_writer_consumer = FileWriterConsumer(
         archive_selection_consumer,
@@ -135,7 +133,12 @@ def valid_directory_or_die(directory_path):
 def archive_selection_criteria(content_type, content_disposition):
 
     """NOT part of the API; simply external to its client.
-    determine whether the payload within the email is worthy."""
+    determine whether the payload within the email is worthy.
+
+    TODO: is this the complete list of criteria?
+    the following article suggests there may be more:
+    https://stackoverflow.com/questions/6977544/
+    rar-zip-files-mime-type"""
 
     return ((content_type == 'application/zip' or
              content_type == 'application/gzip') and
@@ -342,8 +345,6 @@ class ZipArchiveExtractionConsumer:
 
                     result.append(file_path)
 
-        # os.remove(archive_path)
-
         return self._consumer(result)
 
 
@@ -392,17 +393,12 @@ class GzipArchiveExtractionConsumer:
                 with open(file_path, 'wb') as file_pointer:
                     file_pointer.write(content)
 
-                # os.remove(archive_path)
-
                 result.append(file_path)
             else:
                 # malformed name
                 pass
         except Exception:
             # this is not the content we were looking for.
-            # hide the bodies and carry on.
-            #
-            # os.remove(archive_path)
             pass
 
         if len(result) == 1:
@@ -423,7 +419,5 @@ class FileConsumer:
     def __call__(self, file_path):
         with open(file_path, encoding='utf-8') as file_pointer:
             content = file_pointer.read()
-
-        # os.remove(file_path)
 
         return self._consumer(content)

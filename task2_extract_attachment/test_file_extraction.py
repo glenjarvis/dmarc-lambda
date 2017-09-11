@@ -197,11 +197,20 @@ class IntegrationTests(unittest.TestCase):
             )
         )
 
-        extract_files(
+        actual_result = extract_files(
             './tcq88aasf2uj5r4dknkpmp641bloic79f8399ag1',
             './dist'
         )
 
+        # verification of function result
+        self.assertEqual(1, len(actual_result))
+
+        self.assertEqual(
+            './dist/google.com!glenjarvis.com!1501372800!1501459199.xml',
+            actual_result[0]
+        )
+
+        # verification of side effects
         self.assertTrue(
             os.path.isfile(
                 './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
