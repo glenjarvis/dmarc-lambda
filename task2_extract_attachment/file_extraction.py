@@ -45,11 +45,6 @@ def extract_files(source_filepath, target_directory):
     mapping_consumer1 = MappingConsumer(
         file_consumer
     )
-
-    # we need to introduce a content-based-router
-
-    # end of content-based-router
-
     zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
         mapping_consumer1,
         target_directory
@@ -57,8 +52,30 @@ def extract_files(source_filepath, target_directory):
     zip_archive_patch_consumer = ZipArchivePatchConsumer(
         zip_archive_unzip_consumer
     )
+
+    # we need to introduce a content-based-router
+    # temporary
+    class ExplodingConsumer:
+
+        def __call__(self, value):
+            raise SystemError
+
+    attributes_1 = ConsumerSelectionAttributes(
+        predicate=lambda archive_path: archive_path.endswith('.zip'),
+        consumer=zip_archive_patch_consumer
+    )
+    attributes_2 = ConsumerSelectionAttributes(
+        predicate=lambda archive_path: archive_path.endswith('.gz'),
+        consumer=ExplodingConsumer()
+    )
+    archive_selection_consumer = PathSelectionConsumer(
+        [attributes_1, attributes_2],
+        lambda ignored: True
+    )
+    # end of content-based-router
+
     file_writer_consumer = FileWriterConsumer(
-        zip_archive_patch_consumer,
+        archive_selection_consumer,
         target_directory
     )
     mapping_consumer2 = MappingConsumer(
