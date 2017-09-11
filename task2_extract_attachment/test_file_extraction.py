@@ -39,7 +39,7 @@ class DoSomethingIfCalledConsumer:
         self._something(value)
 
 
-class ConsumerTests(unittest.TestCase):
+class UnitTests(unittest.TestCase):
 
     def test_path_selection_consumer_none_match(self):
 

@@ -3,9 +3,11 @@ provided by the Simple Email Service"""
 
 import os
 import zipfile
+import gzip
 from collections import namedtuple
 from email import policy
 from email.parser import BytesParser
+import xml.etree.ElementTree as xml
 
 
 __author__ = 'sweetjonnie'
@@ -318,7 +320,7 @@ class ZipArchivePatchConsumer:
 
 class ZipArchiveExtractionConsumer:
 
-    """given an archive file, this command unarchives
+    """given a zip archive file, this command unarchives
     the file and creates a file for each piece of content
     found within."""
 
@@ -343,6 +345,70 @@ class ZipArchiveExtractionConsumer:
         # os.remove(archive_path)
 
         return self._consumer(result)
+
+
+class GzipArchiveExtractionConsumer:
+
+    """given a gzip archive file, this command unarchives
+    the file and creates a file for the single piece of
+    content found within.
+    
+    'Although its file format also allows for multiple
+    such streams to be concatenated (zipped files are
+    simply decompressed concatenated as if they were
+    originally one file[3]), gzip is normally used to
+    compress just single files.'
+    
+    see also:
+    https://en.wikipedia.org/wiki/Gzip
+    """
+
+    def __init__(self, consumer, directory_path):
+        self._consumer = consumer
+        self._directory_path = valid_directory_or_die(directory_path)
+
+    @examine_consumer_input
+    def __call__(self, archive_path):
+
+        result = []
+
+        with gzip.open(archive_path, 'rb') as gzip_file:
+            content = gzip_file.read()
+
+        try:
+            file_names = os.path.basename(archive_path).split('.')
+
+            if len(file_names) > 1:
+
+                file_names.pop()
+                file_name = '.'.join(file_names)
+                file_path = os.path.join(self._directory_path, file_name)
+
+                # test if it is xml
+                document = xml.fromstring(content.decode('utf-8'))
+                report_metadata = document.find('report_metadata')
+                email_provider = report_metadata.find('org_name').text.strip()
+
+                with open(file_path, 'wb') as file_pointer:
+                    file_pointer.write(content)
+
+                # os.remove(archive_path)
+
+                result.append(file_path)
+            else:
+                # malformed name
+                pass
+        except Exception:
+            # this is not the content we were looking for.
+            # hide the bodies and carry on.
+            #
+            # os.remove(archive_path)
+            pass
+
+        if len(result) == 1:
+            return self._consumer(result[0])
+        else:
+            pass
 
 
 class FileConsumer:
