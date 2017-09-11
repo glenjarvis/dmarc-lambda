@@ -179,7 +179,7 @@ class PathSelectionConsumer:
         for selection_attribute in self._selection_attributes:
 
             if selection_attribute.predicate(value):
-                selection_attribute.consumer(value)
+                return selection_attribute.consumer(value)
             else:
                 pass
 
