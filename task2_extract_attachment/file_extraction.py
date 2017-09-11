@@ -15,6 +15,10 @@ __status__ = 'Prototype'
 
 # pylint: disable=too-few-public-methods
 FileAttributes = namedtuple('FileAttributes', ['file_name', 'file_content'])
+ConsumerSelectionAttributes = namedtuple(
+    'ConsumerSelectionAttributes',
+    ['predicate', 'consumer']
+)
 
 
 def extract_files(source_filepath, target_directory):
@@ -41,6 +45,11 @@ def extract_files(source_filepath, target_directory):
     tee_consumer1 = TeeConsumer(
         file_consumer
     )
+
+    # we need to introduce a content-based-router
+
+    # end of content-based-router
+
     zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
         tee_consumer1,
         target_directory
@@ -123,17 +132,15 @@ def examine_consumer_input(func):
     return wrapper
 
 
+# generic consumers
 class TeeConsumer:
 
     """given a collection of things, this command iterates
-    over the collection and ships each item downstream.
+    over the collection and ships each item downstream. this
+    is the map function within the push based command pattern.
 
     see also:
-    https://en.wikipedia.org/wiki/Tee_(command)
-    http://www.enterpriseintegrationpatterns.com/patterns/messaging/
-        RecipientList.html
-    http://www.enterpriseintegrationpatterns.com/patterns/messaging/
-        WireTap.html
+    https://en.wikipedia.org/wiki/Map_(higher-order_function)
     """
 
     def __init__(self, consumer):
@@ -146,6 +153,40 @@ class TeeConsumer:
             self._consumer(item)
 
 
+class PathSelectionConsumer:
+
+    """configured with a collection of ConsumerSelectionAttributes
+    objects which map predicates to consumers, this command selects
+    the downstream consumer to pass payload to. if none of the
+    predicates match, then the policy function is consulted.
+    while this class is generic, the collection of
+    ConsumerSelectionAttributes and the policy function with which
+    the instance is constructed are very specific to the type of
+    data expected in the invocation.
+
+    see also:
+    http://www.enterpriseintegrationpatterns.com/patterns/messaging/
+    ContentBasedRouter.html
+    """
+
+    def __init__(self, selection_attributes, policy):
+        self._selection_attributes = selection_attributes
+        self._policy = policy
+
+    @examine_consumer_input
+    def __call__(self, value):
+
+        for selection_attribute in self._selection_attributes:
+
+            if selection_attribute.predicate(value):
+                selection_attribute.consumer(value)
+            else:
+                pass
+
+        policy(value)
+
+
+# specialized consumers
 class MailFileConsumer:
 
     """given an absolute path to a mail file, this command
