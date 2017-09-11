@@ -138,17 +138,17 @@ class IntegrationTests(unittest.TestCase):
 
     def clean_up(self):
         try:
-            os.remove('./dist/google.com!glenjarvis.com!1501372800!1501459199.xml')
+            os.remove('./test/google.com!glenjarvis.com!1501372800!1501459199.xml')
         except FileNotFoundError:
             pass
 
         try:
-            os.remove('./dist/google.com!glenjarvis.com!1501372800!1501459199.xml.gz')
+            os.remove('./test/google.com!glenjarvis.com!1501372800!1501459199.xml.gz')
         except FileNotFoundError:
             pass
 
         try:
-            os.remove('./dist/google.com!glenjarvis.com!1501372800!1501459199.zip')
+            os.remove('./test/google.com!glenjarvis.com!1501372800!1501459199.zip')
         except FileNotFoundError:
             pass
 
@@ -162,14 +162,14 @@ class IntegrationTests(unittest.TestCase):
         system_under_test = GzipArchiveExtractionConsumer(
             EqualAssertion(
                 self,
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml'
             ),
-            './dist'
+            './test'
         )
 
         self.assertFalse(
             os.path.isfile(
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml'
             )
         )
 
@@ -177,14 +177,14 @@ class IntegrationTests(unittest.TestCase):
 
         self.assertTrue(
             os.path.isfile(
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml'
             )
         )
 
         self.assertTrue(
             filecmp.cmp(
                 './google.com!glenjarvis.com!1501372800!1501459199.xml',
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml',
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml',
                 shallow=False
             )
         )
@@ -193,34 +193,34 @@ class IntegrationTests(unittest.TestCase):
 
         self.assertFalse(
             os.path.isfile(
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml'
             )
         )
 
         actual_result = extract_files(
             './tcq88aasf2uj5r4dknkpmp641bloic79f8399ag1',
-            './dist'
+            './test'
         )
 
         # verification of function result
         self.assertEqual(1, len(actual_result))
 
         self.assertEqual(
-            './dist/google.com!glenjarvis.com!1501372800!1501459199.xml',
+            './test/google.com!glenjarvis.com!1501372800!1501459199.xml',
             actual_result[0]
         )
 
         # verification of side effects
         self.assertTrue(
             os.path.isfile(
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml'
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml'
             )
         )
 
         self.assertTrue(
             filecmp.cmp(
                 './google.com!glenjarvis.com!1501372800!1501459199.xml',
-                './dist/google.com!glenjarvis.com!1501372800!1501459199.xml',
+                './test/google.com!glenjarvis.com!1501372800!1501459199.xml',
                 shallow=False
             )
         )
