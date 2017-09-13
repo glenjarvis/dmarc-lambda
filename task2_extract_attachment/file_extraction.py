@@ -130,6 +130,31 @@ def valid_directory_or_die(directory_path):
         return directory_path
 
 
+def valid_filename_from_gzip(gzip_filename):
+
+    file_name_components = gzip_filename.split('.')
+
+    if len(file_name_components) <= 1:
+        # deviant case
+        # TODO: timestamp? favorite pony?
+        return 'a-string-that-works'
+    else:
+        file_name_components.pop()
+        file_name = '.'.join(file_name_components)
+        return file_name
+
+
+def validate_dmarc_document(content):
+
+    try:
+        # test if it is xml
+        document = xml.fromstring(content.decode('utf-8'))
+        report_metadata = document.find('report_metadata')
+        report_metadata.find('org_name').text.strip()
+    except Exception as exception:
+        raise TypeError(exception)
+
+
 def archive_selection_criteria(content_type, content_disposition):
 
     """NOT part of the API; simply external to its client.
@@ -381,34 +406,23 @@ class GzipArchiveExtractionConsumer:
             content = gzip_file.read()
 
         try:
-            file_names = os.path.basename(archive_path).split('.')
+            validate_dmarc_document(content)
+            gzip_file_name = os.path.basename(archive_path)
+            file_name = valid_filename_from_gzip(gzip_file_name)
+            file_path = os.path.join(self._directory_path, file_name)
 
-            if len(file_names) > 1:
+            with open(file_path, 'wb') as file_pointer:
+                file_pointer.write(content)
 
-                file_names.pop()
-                file_name = '.'.join(file_names)
-                file_path = os.path.join(self._directory_path, file_name)
+            result.append(file_path)
 
-                # test if it is xml
-                document = xml.fromstring(content.decode('utf-8'))
-                report_metadata = document.find('report_metadata')
-                report_metadata.find('org_name').text.strip()
-
-                with open(file_path, 'wb') as file_pointer:
-                    file_pointer.write(content)
-
-                result.append(file_path)
-            else:
-                # malformed name
-                pass
-        except Exception:
-            # this is not the content we were looking for.
+        except TypeError:
             pass
 
         if len(result) == 1:
             return self._consumer(result[0])
         else:
-            pass
+            return None
 
 
 class FileConsumer:
