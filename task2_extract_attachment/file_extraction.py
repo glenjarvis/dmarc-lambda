@@ -4,6 +4,7 @@ provided by the Simple Email Service"""
 import os
 import zipfile
 import gzip
+import datetime
 from collections import namedtuple
 from email import policy
 from email.parser import BytesParser
@@ -130,24 +131,56 @@ def valid_directory_or_die(directory_path):
         return directory_path
 
 
-def valid_filename_from_gzip(gzip_filename):
+def filename_from_gzip_name(gzip_filename):
+
+    """Gzip attempts to preserve the original filename but it can
+    subsequently be renamed. This function attempts to recover the
+    original filename (under the assumption that the filename was
+    not modified) by examining the components of the filename
+    rather than looking inside of the archive. In the event that
+    this algorithm fails to restore the filename (possibly because
+    the filename was subsequently modified), then this algorithm
+    will provide a name based on the current timestamp. Finally,
+    because the dmarc file is xml, this function optimistically
+    adds an xml suffix if one is not present.
+
+    see also:
+    https://superuser.com/questions/859785/
+    is-gzip-supposed-to-honor-original-filename-during-decompress
+    """
 
     file_name_components = gzip_filename.split('.')
+    result = None
 
     if len(file_name_components) <= 1:
         # deviant case
-        # TODO: timestamp? favorite pony?
-        return 'a-string-that-works'
+        result = ''.join(
+            map(
+                lambda c: '_' if c in ('-', ':', '.', ' ') else c,
+                str(datetime.datetime.utcnow())
+            )
+        )
     else:
         file_name_components.pop()
         file_name = '.'.join(file_name_components)
-        return file_name
+        result = file_name
+
+    if not result.endswith('.xml'):
+        result += '.xml'
+    else:
+        pass
+
+    return result
 
 
 def validate_dmarc_document(content):
 
+    """validate the content of a file in order to verify
+    whether it is dmarc, a dialect of XML by opening it
+    up with the etree library and testing to see if it
+    has the right duck parts."""
+
     try:
-        # test if it is xml
         document = xml.fromstring(content.decode('utf-8'))
         report_metadata = document.find('report_metadata')
         report_metadata.find('org_name').text.strip()
@@ -376,7 +409,6 @@ class ZipArchiveExtractionConsumer:
         return self._consumer(result)
 
 
-# pylint: disable=broad-except
 class GzipArchiveExtractionConsumer:
 
     """given a gzip archive file, this command unarchives
@@ -408,7 +440,7 @@ class GzipArchiveExtractionConsumer:
         try:
             validate_dmarc_document(content)
             gzip_file_name = os.path.basename(archive_path)
-            file_name = valid_filename_from_gzip(gzip_file_name)
+            file_name = filename_from_gzip_name(gzip_file_name)
             file_path = os.path.join(self._directory_path, file_name)
 
             with open(file_path, 'wb') as file_pointer:
@@ -421,8 +453,6 @@ class GzipArchiveExtractionConsumer:
 
         if len(result) == 1:
             return self._consumer(result[0])
-        else:
-            return None
 
 
 class FileConsumer:
