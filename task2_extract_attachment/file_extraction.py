@@ -1,5 +1,4 @@
-"""file_extraction.py: extracts the zip attachment(s) from raw email file
-provided by the Simple Email Service"""
+"""Extracts archived attachments from an email and returns dmarc paths."""
 
 import os
 import zipfile
@@ -26,13 +25,18 @@ ConsumerSelectionAttributes = namedtuple(
 
 def extract_files(source_filepath, target_directory):
 
-    """the signature of this function is the API of this module
-       the implementation of this function is the agent of dependency injection
-       source_filepath is the full path to the input file
-       target_directory is the full path of the directory to be used for
-         processing
-       return value is a collection of zero or more paths, each of which is the
-         absolute path of an extracted and unarchived xml file"""
+    """Parses the mail file and returns the paths of valid dmarc file.
+
+    This is the sole member of the API in this module. The
+    implementation of this function is the composition of several
+    commands. Specifically, this function assembles a workflow by
+    wiring these commands together.
+    source_filepath is the full path to the input file
+    target_directory is the full path of the directory to be used for
+        processing
+    return value is a collection of zero or more paths, each of which
+        is the absolute path of an extracted and unarchived xml file
+    """
 
     result = []
 
@@ -57,11 +61,7 @@ def extract_files(source_filepath, target_directory):
         target_directory
     )
 
-    # content-based-router:
-    # do i zip or use gzip?
-    # do i zip or use gzip?
-    # if gzip, there may be trouble.
-    # if i zip, the size is double.
+    # content-based-router: to zip or gzip ...
     attributes_1 = ConsumerSelectionAttributes(
         predicate=lambda archive_path: archive_path.endswith('.zip'),
         consumer=zip_archive_patch_consumer
@@ -97,8 +97,10 @@ def extract_files(source_filepath, target_directory):
 
 def extract_filename(line):
 
-    """NOT part of the API; simply external to its client.
-    extract the name of filename from the metadata."""
+    """Extract the name of filename from the metadata.
+
+    NOT part of the API; simply external to its client.
+    """
 
     key = 'filename'
     filename_position_start = line.index(key) + len(key)
@@ -121,8 +123,10 @@ def extract_filename(line):
 
 def valid_directory_or_die(directory_path):
 
-    """NOT part of the API; simply external to its client.
-    life is too short for bad directories. fight back."""
+    """Validate the directory whose path is provided.
+
+    NOT part of the API; simply external to its client.
+    """
 
     if (not os.path.exists(directory_path) or
             not os.path.isdir(directory_path)):
@@ -133,7 +137,10 @@ def valid_directory_or_die(directory_path):
 
 def filename_from_gzip_name(gzip_filename):
 
-    """Gzip attempts to preserve the original filename but it can
+    """Infers the name of embedded content from the name of an archive.
+
+    NOT part of the API; simply external to its client.
+    Gzip attempts to preserve the original filename but it can
     subsequently be renamed. This function attempts to recover the
     original filename (under the assumption that the filename was
     not modified) by examining the components of the filename
@@ -175,10 +182,13 @@ def filename_from_gzip_name(gzip_filename):
 
 def validate_dmarc_document(content):
 
-    """validate the content of a file in order to verify
-    whether it is dmarc, a dialect of XML by opening it
-    up with the etree library and testing to see if it
-    has the right duck parts."""
+    """Validate the content of a file against dmarc criteria.
+
+    NOT part of the API; simply external to its client.
+    This procedure attempts to verify whether the file is dmarc,
+    a dialect of XML, by opening it up with the etree library
+    and looking for dmarc elements.
+    """
 
     try:
         document = xml.fromstring(content.decode('utf-8'))
@@ -190,9 +200,9 @@ def validate_dmarc_document(content):
 
 def archive_selection_criteria(content_type, content_disposition):
 
-    """NOT part of the API; simply external to its client.
-    determine whether the payload within the email is worthy.
+    """Determine whether the payload within the email is worthy.
 
+    NOT part of the API; simply external to its client.
     TODO: is this the complete list of criteria?
     the following article suggests there may be more:
     https://stackoverflow.com/questions/6977544/
@@ -206,19 +216,23 @@ def archive_selection_criteria(content_type, content_disposition):
 
 def examine_consumer_input(func):
 
-    """NOT part of the API; simply external to its client.
-    decorator used for debugging the flow of information.
-    don't wish to debug? then don't decorate (TM)."""
+    """Decorator used for debugging the flow of information.
+
+    NOT part of the API; simply external to its client.
+    Don't wish to debug? then don't decorate (TM).
+    """
 
     def wrapper(target, value):
 
-        """Crocket: 'just a wrapper function ...'"""
+        """The wrapper function which prints and invokes the command."""
 
         msg = 'target {} declares input {}'.format(
             target.__class__.__name__,
             value
         )
+
         print(msg)
+
         func(target, value)
 
     return wrapper
@@ -227,9 +241,10 @@ def examine_consumer_input(func):
 # generic consumers
 class MappingConsumer:
 
-    """given a collection of things, this command iterates
-    over the collection and ships each item downstream. this
-    is the map function within the push based command pattern.
+    """Invokes the downstream command against each in a collection.
+
+    This is the push based command pattern equivalent of the map
+    function.
 
     see also:
     https://en.wikipedia.org/wiki/Map_(higher-order_function)
@@ -247,14 +262,16 @@ class MappingConsumer:
 
 class PathSelectionConsumer:
 
-    """configured with a collection of ConsumerSelectionAttributes
-    objects which map predicates to consumers, this command selects
-    the downstream consumer to pass payload to. if none of the
-    predicates match, then the policy function is consulted.
-    while this class is generic, the collection of
-    ConsumerSelectionAttributes and the policy function with which
-    the instance is constructed are very specific to the type of
-    data expected in the invocation.
+    """This command selects the consumer to pass the given payload to.
+
+    This command is configured with a collection of
+    ConsumerSelectionAttributes objects, each of which maps a predicate
+    function to a downstream consumer. When a payload is passed to an
+    invocation of this command, Each predicate is tested in order until
+    one predicate succeeds. At this point, the payload is passed to the
+    consumer associated with that predicate. If none of the predicates
+    succeed, then the policy function, with which this class was
+    configured, will be consulted.
 
     see also:
     http://www.enterpriseintegrationpatterns.com/patterns/messaging/
@@ -281,9 +298,13 @@ class PathSelectionConsumer:
 # specialized consumers
 class MailFileConsumer:
 
-    """given an absolute path to a mail file, this command
-    shreds the file and extracts desired attachments.
-    attribution: code borrowed from
+    """This command reads an email and extracts desired attachments.
+
+    Given an absolute path to a mail file, this command examines each
+    attachment and determines, according to the policy provided by the
+    content_criteria function, whether that attachment is desirable.
+
+    attribution:
     https://stackoverflow.com/questions/17874360/
 python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
 
@@ -292,10 +313,10 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
         self._content_criteria = content_criteria
 
     @examine_consumer_input
-    def __call__(self, file_name):
+    def __call__(self, file_path):
         result = []
 
-        with open(file_name, 'rb') as file_pointer:
+        with open(file_path, 'rb') as file_pointer:
 
             msg = BytesParser(policy=policy.default).parse(file_pointer)
 
@@ -332,8 +353,12 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
 
 class FileWriterConsumer:
 
-    """given a file-attributes object, this command creates
-    and populates a file."""
+    """This command creates and populates a file.
+
+    The name and contents of the file are provided by the
+    File_Attributes object passed as an argument and the resulting
+    file is placed at the location specified by directory_path.
+    """
 
     def __init__(self, consumer, directory_path):
         self._consumer = consumer
@@ -355,12 +380,15 @@ class FileWriterConsumer:
 
 class ZipArchivePatchConsumer:
 
-    """given an absolute path to an archive file, this
-    command patches the archive in order to overcome a
-    limitation of the zipfile module.
-    attribution: code stolen from
+    """This command patches a zip archive file.
+
+    There is a documented limitation of the zipfile module that
+    this patch was designed to address.
+
+    attribution:
     https://stackoverflow.com/questions/3083235/
-    unzipping-file-results-in-badzipfile-file-is-not-a-zip-file"""
+    unzipping-file-results-in-badzipfile-file-is-not-a-zip-file
+    """
 
     def __init__(self, consumer):
         self._consumer = consumer
@@ -384,9 +412,11 @@ class ZipArchivePatchConsumer:
 
 class ZipArchiveExtractionConsumer:
 
-    """given a zip archive file, this command unarchives
-    the file and creates a file for each piece of content
-    found within."""
+    """This command decompresses a zip file.
+
+    Each file embedded in the archive is extracted and placed at the
+    location specified by directory_path.
+    """
 
     def __init__(self, consumer, directory_path):
         self._consumer = consumer
@@ -411,14 +441,14 @@ class ZipArchiveExtractionConsumer:
 
 class GzipArchiveExtractionConsumer:
 
-    """given a gzip archive file, this command unarchives
-    the file and creates a file for the single piece of
-    content found within.
+    """This command decompresses a gzip file.
 
-    'Although its file format also allows for multiple
-    such streams to be concatenated (zipped files are
-    simply decompressed concatenated as if they were
-    originally one file[3]), gzip is normally used to
+    The decompressed file is then placed at the location specified by
+    directory_path.
+
+    'Although its file format also allows for multiple such streams to
+    be concatenated (zipped files are simply decompressed concatenated
+    as if they were originally one file[3]), gzip is normally used to
     compress just single files.'
 
     see also:
@@ -457,8 +487,7 @@ class GzipArchiveExtractionConsumer:
 
 class FileConsumer:
 
-    """given an absolute path to a file, this command
-    exports the file's contents."""
+    """This command exports the file's contents."""
 
     def __init__(self, consumer):
         self._consumer = consumer
