@@ -32,8 +32,8 @@ def extract_files(source_filepath, target_directory):
     commands. Specifically, this function assembles a workflow by
     wiring these commands together.
     source_filepath is the full path to the input file
-    target_directory is the full path of the directory to be used for
-        processing
+    target_directory is the full path of the directory where dmarc
+        files are to be placed
     return value is a collection of zero or more paths, each of which
         is the absolute path of an extracted and unarchived xml file
     """
