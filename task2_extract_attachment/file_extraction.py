@@ -53,16 +53,9 @@ class DmarcFileExtractor:
 
     def __init__(self, target_directory):
 
-        self._result = []
-
-        def file_path_consumer(file_path):
-
-            """trivial consumer for file_path collection"""
-
-            self._result.append(file_path)
-
+        self._result_consumer = ResultConsumer()
         mapping_consumer1 = MappingConsumer(
-            file_path_consumer
+            self._result_consumer
         )
         zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
             mapping_consumer1,
@@ -72,7 +65,7 @@ class DmarcFileExtractor:
             zip_archive_unzip_consumer
         )
         gzip_archive_unzip_consumer = GzipArchiveExtractionConsumer(
-            file_path_consumer,
+            self._result_consumer,
             target_directory
         )
 
@@ -107,16 +100,13 @@ class DmarcFileExtractor:
 
         """This is the sole method for this class; this is the API."""
 
-        self._result.clear()
+        self._result_consumer.results = []
+        self._workflow(source_filepath)
 
-        self._workflow(
-            source_filepath
-        )
+        results = list(self._result_consumer.results)
+        self._result_consumer.results = []
 
-        result = list(self._result)
-        self._result.clear()
-
-        return result
+        return results
 
 
 def extract_filename(line):
@@ -320,6 +310,33 @@ class PathSelectionConsumer:
 
 
 # specialized consumers
+class ResultConsumer:
+
+    """This consumer receives each result and adds it to its collection."""
+
+    @property
+    def results(self):
+
+        """The results property contains the workflow's output."""
+
+        return self._results
+
+    @results.setter
+    def results(self, results):
+
+        """Clients need to reset this prior to invoking workflow."""
+
+        # pylint: disable=attribute-defined-outside-init
+        self._results = results
+
+    @examine_consumer_input
+    def __call__(self, result):
+
+        """trivial consumer for result collection"""
+
+        self._results.append(result)
+
+
 class MailFileConsumer:
 
     """This command reads an email and extracts desired attachments.
