@@ -310,9 +310,9 @@ class ApiIntegrationTests(unittest.TestCase):
             )
         )
 
-        actual_result = file_extraction.extract_files(
-            './tcq88aasf2uj5r4dknkpmp641bloic79f8399ag1',
-            './test'
+        system_under_test = file_extraction.DmarcFileExtractor('./test')
+        actual_result = system_under_test.process(
+            './tcq88aasf2uj5r4dknkpmp641bloic79f8399ag1'
         )
 
         # verification of function result
