@@ -184,7 +184,8 @@ class PathSelectionConsumerUnitTests(unittest.TestCase):
         """Scenario: all of the predicates return True
 
         (i) control passes only to the first downstream consumer
-        (ii) the policy function is not invoked"""
+        (ii) the policy function is not invoked
+        """
 
         exploding_consumer = DoSomethingIfCalledConsumer(
             raise_error
