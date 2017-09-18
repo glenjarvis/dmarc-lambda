@@ -1,5 +1,4 @@
-"""test_file_extraction.py: unit-tests and integration-tests
-the file_extraction API."""
+"""unit-tests and integration-tests"""
 
 import unittest
 import os
@@ -40,8 +39,7 @@ class Success:
 
     def __call__(self, value):
 
-        """This procedure indicates success in
-        the event that it is called"""
+        """This procedure indicates success when called."""
 
         self._test_case.assertTrue(True)
 
@@ -60,9 +58,11 @@ class EqualAssertion:
 
 class PathOfControlFailure:
 
-    """Test policy function whose invocation generates
-    test error: useful for enforcing that control did
-    not pass through this point"""
+    """This policy function generates a test error.
+
+    Such a function is useful for verifying that control did
+    not pass through this point.
+    """
 
     def __init__(self, test_case):
         self._test_case = test_case
@@ -88,11 +88,11 @@ class PathSelectionConsumerUnitTests(unittest.TestCase):
 
     def test_none_match(self):
 
-        """This test verifies the following: in the
-        event that no predicate returns True, then
-        (i) control does not pass to any downstream
-        consumer
-        (ii) the policy function is invoked"""
+        """Scenario: no predicate returns True
+
+        (i) control does not pass to any downstream consumer
+        (ii) the policy function is invoked
+        """
 
         exploding_consumer = DoSomethingIfCalledConsumer(
             raise_error
@@ -117,12 +117,11 @@ class PathSelectionConsumerUnitTests(unittest.TestCase):
 
     def test_first_matches(self):
 
-        """This test verifies the following: in the
-        event that only the first predicate returns
-        True, then
-        (i) control passes only to the first
-        downstream consumer
-        (ii) the policy function is not invoked"""
+        """Scenario: only the first predicate returns True
+
+        (i) control passes only to the first downstream consumer
+        (ii) the policy function is not invoked
+        """
 
         exploding_consumer = DoSomethingIfCalledConsumer(
             raise_error
@@ -150,12 +149,11 @@ class PathSelectionConsumerUnitTests(unittest.TestCase):
 
     def test_last_matches(self):
 
-        """This test verifies the following: in the
-        event that only the last predicate returns
-        True, then
-        (i) control passes only to the last
-        downstream consumer
-        (ii) the policy function is not invoked"""
+        """Scenario: only the last predicate returns True
+
+        (i) control passes only to the last downstream consumer
+        (ii) the policy function is not invoked
+        """
 
         exploding_consumer = DoSomethingIfCalledConsumer(
             raise_error
@@ -183,11 +181,9 @@ class PathSelectionConsumerUnitTests(unittest.TestCase):
 
     def test_control(self):
 
-        """This test verifies the following: in the
-        event that all of the predicates return
-        True, then
-        (i) control passes only to the first
-        downstream consumer
+        """Scenario: all of the predicates return True
+
+        (i) control passes only to the first downstream consumer
         (ii) the policy function is not invoked"""
 
         exploding_consumer = DoSomethingIfCalledConsumer(
@@ -253,8 +249,7 @@ class GzipArchiveExtractionConsumerIntegrationTests(unittest.TestCase):
 
     def test_file_generation(self):
 
-        """This test verifies the file generation capability
-        of the GzipArchiveExtractionConsumer class"""
+        """Verifies file generation of GzipArchiveExtractionConsumer"""
 
         system_under_test = file_extraction.GzipArchiveExtractionConsumer(
             EqualAssertion(
@@ -301,8 +296,7 @@ class ApiIntegrationTests(unittest.TestCase):
 
     def test_api(self):
 
-        """This test verifies the file generation capability
-        of the API (task 2 end to end)"""
+        """This test verifies the file generation capability of the API."""
 
         self.assertFalse(
             os.path.isfile(
