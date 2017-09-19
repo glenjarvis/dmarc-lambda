@@ -267,7 +267,7 @@ class MappingConsumer:
     def __init__(self, consumer):
         self._consumer = consumer
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, collection):
 
         for item in collection:
@@ -296,7 +296,7 @@ class PathSelectionConsumer:
         self._selection_attributes = selection_attributes
         self._policy_function = policy_function
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, value):
 
         for selection_attribute in self._selection_attributes:
@@ -329,7 +329,7 @@ class ResultConsumer:
         # pylint: disable=attribute-defined-outside-init
         self._results = results
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, result):
 
         """trivial consumer for result collection"""
@@ -353,7 +353,7 @@ python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not"""
         self._consumer = consumer
         self._content_criteria = content_criteria
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, file_path):
         result = []
 
@@ -405,7 +405,7 @@ class FileWriterConsumer:
         self._consumer = consumer
         self._directory_path = valid_directory_or_die(directory_path)
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, file_attributes):
 
         file_path = os.path.join(
@@ -434,7 +434,7 @@ class ZipArchivePatchConsumer:
     def __init__(self, consumer):
         self._consumer = consumer
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, archive_path):
         with open(archive_path, 'r+b') as file_pointer:
             content = file_pointer.read()
@@ -463,7 +463,7 @@ class ZipArchiveExtractionConsumer:
         self._consumer = consumer
         self._directory_path = valid_directory_or_die(directory_path)
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, archive_path):
         result = []
 
@@ -500,7 +500,7 @@ class GzipArchiveExtractionConsumer:
         self._consumer = consumer
         self._directory_path = valid_directory_or_die(directory_path)
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, archive_path):
 
         result = []
@@ -533,7 +533,7 @@ class FileConsumer:
     def __init__(self, consumer):
         self._consumer = consumer
 
-    @examine_consumer_input
+    # @examine_consumer_input
     def __call__(self, file_path):
         with open(file_path, encoding='utf-8') as file_pointer:
             content = file_pointer.read()
