@@ -23,7 +23,7 @@ ConsumerSelectionAttributes = namedtuple(
 )
 
 
-def extract_files(source_filepath, target_directory):
+class DmarcFileExtractor:
 
     """Parses the mail file and returns the paths of valid dmarc file.
 
@@ -31,6 +31,19 @@ def extract_files(source_filepath, target_directory):
     implementation of this function is the composition of several
     commands. Specifically, this function assembles a workflow by
     wiring these commands together.
+
+    Given a directory at which files are to be placed, an instance
+    of this class may be used several times for each email file
+    processed. Because the extracted files remain after execution,
+    a client performing an invocation may stumble upon one or more
+    files produced during a previous invocation. Therefore, it is
+    incumbent upon a client to use the return value of an
+    invocation to determine which files were produced during that
+    invocation.
+
+    WARNING: An instance of this class is NOT suitable for use
+    within multiple threads of execution.
+
     source_filepath is the full path to the input file
     target_directory is the full path of the directory where dmarc
         files are to be placed
@@ -38,61 +51,62 @@ def extract_files(source_filepath, target_directory):
         is the absolute path of an extracted and unarchived xml file
     """
 
-    result = []
+    def __init__(self, target_directory):
 
-    def file_path_consumer(file_path):
+        self._result_consumer = ResultConsumer()
+        mapping_consumer1 = MappingConsumer(
+            self._result_consumer
+        )
+        zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
+            mapping_consumer1,
+            target_directory
+        )
+        zip_archive_patch_consumer = ZipArchivePatchConsumer(
+            zip_archive_unzip_consumer
+        )
+        gzip_archive_unzip_consumer = GzipArchiveExtractionConsumer(
+            self._result_consumer,
+            target_directory
+        )
 
-        """trivial consumer for file_path collection"""
+        # content-based-router: to zip or gzip ...
+        attributes_1 = ConsumerSelectionAttributes(
+            predicate=lambda archive_path: archive_path.endswith('.zip'),
+            consumer=zip_archive_patch_consumer
+        )
+        attributes_2 = ConsumerSelectionAttributes(
+            predicate=lambda archive_path: archive_path.endswith('.gz'),
+            consumer=gzip_archive_unzip_consumer
+        )
+        archive_selection_consumer = PathSelectionConsumer(
+            [attributes_1, attributes_2],
+            lambda ignored: True
+        )
 
-        result.append(file_path)
+        file_writer_consumer = FileWriterConsumer(
+            archive_selection_consumer,
+            target_directory
+        )
+        mapping_consumer2 = MappingConsumer(
+            file_writer_consumer
+        )
 
-    mapping_consumer1 = MappingConsumer(
-        file_path_consumer
-    )
-    zip_archive_unzip_consumer = ZipArchiveExtractionConsumer(
-        mapping_consumer1,
-        target_directory
-    )
-    zip_archive_patch_consumer = ZipArchivePatchConsumer(
-        zip_archive_unzip_consumer
-    )
-    gzip_archive_unzip_consumer = GzipArchiveExtractionConsumer(
-        file_path_consumer,
-        target_directory
-    )
+        self._workflow = MailFileConsumer(
+            mapping_consumer2,
+            archive_selection_criteria
+        )
 
-    # content-based-router: to zip or gzip ...
-    attributes_1 = ConsumerSelectionAttributes(
-        predicate=lambda archive_path: archive_path.endswith('.zip'),
-        consumer=zip_archive_patch_consumer
-    )
-    attributes_2 = ConsumerSelectionAttributes(
-        predicate=lambda archive_path: archive_path.endswith('.gz'),
-        consumer=gzip_archive_unzip_consumer
-    )
-    archive_selection_consumer = PathSelectionConsumer(
-        [attributes_1, attributes_2],
-        lambda ignored: True
-    )
+    def process(self, source_filepath):
 
-    file_writer_consumer = FileWriterConsumer(
-        archive_selection_consumer,
-        target_directory
-    )
-    mapping_consumer2 = MappingConsumer(
-        file_writer_consumer
-    )
-    workflow = MailFileConsumer(
-        mapping_consumer2,
-        archive_selection_criteria
-    )
+        """This is the sole method for this class; this is the API."""
 
-    # initiate consumption
-    workflow(
-        source_filepath
-    )
+        self._result_consumer.results = []
+        self._workflow(source_filepath)
 
-    return result
+        results = list(self._result_consumer.results)
+        self._result_consumer.results = []
+
+        return results
 
 
 def extract_filename(line):
@@ -296,6 +310,33 @@ class PathSelectionConsumer:
 
 
 # specialized consumers
+class ResultConsumer:
+
+    """This consumer receives each result and adds it to its collection."""
+
+    @property
+    def results(self):
+
+        """The results property contains the workflow's output."""
+
+        return self._results
+
+    @results.setter
+    def results(self, results):
+
+        """Clients need to reset this prior to invoking workflow."""
+
+        # pylint: disable=attribute-defined-outside-init
+        self._results = results
+
+    @examine_consumer_input
+    def __call__(self, result):
+
+        """trivial consumer for result collection"""
+
+        self._results.append(result)
+
+
 class MailFileConsumer:
 
     """This command reads an email and extracts desired attachments.
